@@ -3,8 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTTP Chat Application</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Professional Chat Application</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 900px;
+            height: 95vh;
+            background: #0f3460;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #e94560 0%, #533483 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            font-size: 26px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .connection-status {
+            padding: 10px;
+            text-align: center;
+            font-size: 13px;
+            background: #4caf50;
+            color: white;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .connection-status.disconnected {
+            background: #f44336;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            background: #16213e;
+        }
+
+        .message {
+            margin-bottom: 18px;
+            padding: 15px 18px;
+            border-radius: 12px;
+            background: #0f3460;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+            border-left: 4px solid #e94560;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #a0a0a0;
+        }
+
+        .username {
+            font-weight: 700;
+            color: #e94560;
+            font-size: 14px;
+        }
+
+        .timestamp {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .message-text {
+            color: #e0e0e0;
+            word-wrap: break-word;
+            line-height: 1.5;
+            font-size: 15px;
+        }
+
+        .chat-input-area {
+            padding: 25px;
+            background: #0f3460;
+            border-top: 2px solid #1a1a2e;
+        }
+
+        .user-input {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 14px 16px;
+            border: 2px solid #1a1a2e;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #16213e;
+            color: #e0e0e0;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #e94560;
+            box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+        }
+
+        .message-input-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        #messageInput {
+            flex: 1;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #e94560 0%, #533483 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #1a1a2e;
+            color: #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: #16213e;
+            transform: translateY(-1px);
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f3460;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #e94560;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #533483;
+        }
+
+        @media (max-width: 768px) {
+            .user-input {
+                flex-direction: column;
+            }
+            
+            .message-input-group {
+                flex-wrap: wrap;
+            }
+            
+            .btn {
+                flex: 1;
+                min-width: 100px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="chat-container">
@@ -15,7 +228,7 @@
         <div class="chat-messages" id="chatMessages"></div>
         <div class="chat-input-area">
             <div class="user-input">
-                <input type="text" id="usernameInput" class="input-field" placeholder="Your name" value="Jhon Doe">
+                <input type="text" id="usernameInput" class="input-field" placeholder="Your name" value="User A">
                 <input type="text" id="remoteServer" class="input-field" placeholder="Remote server IP:PORT (e.g., 3.45.67.89:5000)" value="13.203.226.167:5000">
             </div>
             <div class="message-input-group">
@@ -54,7 +267,7 @@
         function displayNewMessages(messages) {
             const chatDiv = document.getElementById('chatMessages');
             let hasNewMessages = false;
-            
+
             messages.forEach(msg => {
                 // Create unique ID for each message
                 const msgId = `${msg.username}_${msg.timestamp}_${msg.message}`;
@@ -63,7 +276,7 @@
                 if (!displayedMessageIds.has(msgId)) {
                     displayedMessageIds.add(msgId);
                     hasNewMessages = true;
-                    
+
                     const messageDiv = document.createElement('div');
                     messageDiv.className = 'message';
                     messageDiv.innerHTML = `
@@ -76,7 +289,7 @@
                     chatDiv.appendChild(messageDiv);
                 }
             });
-            
+
             // Only scroll if there are new messages
             if (hasNewMessages) {
                 chatDiv.scrollTop = chatDiv.scrollHeight;
@@ -87,7 +300,6 @@
         function sendMessage() {
             const username = document.getElementById('usernameInput').value.trim();
             const message = document.getElementById('messageInput').value.trim();
-            const remote = document.getElementById('remoteServer').value.trim();
 
             if (!username || !message) {
                 alert('Please enter your name and a message');
