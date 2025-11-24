@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP Chat Application</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            Chat Application
+        </div>
+        <div class="connection-status" id="status">Connected</div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input-area">
+            <div class="user-input">
+                <input type="text" id="usernameInput" class="input-field" placeholder="Your name" value="Jhon Doe">
+                <input type="text" id="remoteServer" class="input-field" placeholder="Remote server IP:PORT (e.g., 3.45.67.89:5000)" value="13.203.226.167:5000">
+            </div>
+            <div class="message-input-group">
+                <input type="text" id="messageInput" class="input-field" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()" class="btn btn-primary">Send</button>
+                <button onclick="clearMessages()" class="btn btn-secondary">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const LOCAL_SERVER = window.location.origin;
+        let remoteServerUrl = '';
+        let displayedMessageIds = new Set();
+
+        // Fetch messages periodically
+        function fetchMessages() {
+            const remote = document.getElementById('remoteServer').value.trim();
+            
+            // Fetch from local server
+            fetch(`${LOCAL_SERVER}/messages`)
+                .then(response => response.json())
+                .then(data => displayNewMessages(data.messages))
+                .catch(err => updateStatus('Disconnected from local server', false));
+
+            // Fetch from remote server if specified
+            if (remote) {
+                remoteServerUrl = remote.startsWith('http') ? remote : `http://${remote}`;
+                fetch(`${remoteServerUrl}/messages`)
+                    .then(response => response.json())
+                    .then(data => displayNewMessages(data.messages))
+                    .catch(err => console.log('Remote fetch failed'));
+            }
+        }
+
+        function displayNewMessages(messages) {
+            const chatDiv = document.getElementById('chatMessages');
+            let hasNewMessages = false;
+            
+            messages.forEach(msg => {
+                // Create unique ID for each message
+                const msgId = `${msg.username}_${msg.timestamp}_${msg.message}`;
+                
+                // Only add if we haven't displayed this message before
+                if (!displayedMessageIds.has(msgId)) {
+                    displayedMessageIds.add(msgId);
+                    hasNewMessages = true;
+                    
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'message';
+                    messageDiv.innerHTML = `
+                        <div class="message-header">
+                            <span class="username">${escapeHtml(msg.username)}</span>
+                            <span class="timestamp">${msg.timestamp}</span>
+                        </div>
+                        <div class="message-text">${escapeHtml(msg.message)}</div>
+                    `;
+                    chatDiv.appendChild(messageDiv);
+                }
+            });
+            
+            // Only scroll if there are new messages
+            if (hasNewMessages) {
+                chatDiv.scrollTop = chatDiv.scrollHeight;
+                updateStatus('Connected', true);
+            }
+        }
+
+        function sendMessage() {
+            const username = document.getElementById('usernameInput').value.trim();
+            const message = document.getElementById('messageInput').value.trim();
+            const remote = document.getElementById('remoteServer').value.trim();
+
+            if (!username || !message) {
+                alert('Please enter your name and a message');
+                return;
+            }
+
+            const payload = {
+                username: username,
+                message: message
+            };
+
+            // Clear input immediately to prevent double-send
+            document.getElementById('messageInput').value = '';
+
+            // Send ONLY to local server
+            fetch(`${LOCAL_SERVER}/send`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Immediately display the sent message
+                displayNewMessages([data.message]);
+            })
+            .catch(err => alert('Failed to send message'));
+        }
+
+        function clearMessages() {
+            if (confirm('Clear all messages?')) {
+                fetch(`${LOCAL_SERVER}/clear`, {method: 'POST'})
+                    .then(() => {
+                        // Clear displayed messages tracking
+                        displayedMessageIds.clear();
+                        document.getElementById('chatMessages').innerHTML = '';
+                    })
+                    .catch(err => alert('Failed to clear messages'));
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function updateStatus(text, connected) {
+            const status = document.getElementById('status');
+            status.textContent = text;
+            status.className = connected ? 'connection-status' : 'connection-status disconnected';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Fetch messages every 2 seconds
+        setInterval(fetchMessages, 2000);
+        fetchMessages();
+    </script>
+</body>
+</html>
